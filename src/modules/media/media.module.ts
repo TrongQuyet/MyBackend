@@ -1,18 +1,29 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BullModule, InjectQueue } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
+import { Queue } from 'bullmq';
 import { MediaService } from './media.service';
 import { MediaController } from './media.controller';
 import { Media } from './entities/media.entity';
 import { LocalStorageProvider } from './providers/local-storage.provider';
 import { S3StorageProvider } from './providers/s3-storage.provider';
 import { STORAGE_PROVIDER } from './interfaces/storage-provider.interface';
+import {
+  MEDIA_QUEUE,
+  ImageProcessingProcessor,
+} from './processors/image-processing.processor';
+import { QueueService } from '../queue/queue.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Media])],
+  imports: [
+    TypeOrmModule.forFeature([Media]),
+    BullModule.registerQueue({ name: MEDIA_QUEUE }),
+  ],
   controllers: [MediaController],
   providers: [
     MediaService,
+    ImageProcessingProcessor,
     LocalStorageProvider,
     S3StorageProvider,
     {
@@ -36,4 +47,13 @@ import { STORAGE_PROVIDER } from './interfaces/storage-provider.interface';
   ],
   exports: [MediaService],
 })
-export class MediaModule {}
+export class MediaModule implements OnModuleInit {
+  constructor(
+    @InjectQueue(MEDIA_QUEUE) private readonly mediaQueue: Queue,
+    private readonly queueService: QueueService,
+  ) {}
+
+  onModuleInit() {
+    this.queueService.registerQueue(MEDIA_QUEUE, this.mediaQueue);
+  }
+}

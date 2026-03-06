@@ -15,6 +15,8 @@ import { STORAGE_PROVIDER } from './interfaces/storage-provider.interface';
 import type { StorageProvider } from './interfaces/storage-provider.interface';
 import { QueryMediaDto } from './dto/query-media.dto';
 import { Role } from '../../common/constants/app.constants';
+import { QueueService } from '../queue/queue.service';
+import { MEDIA_QUEUE } from './processors/image-processing.processor';
 
 @Injectable()
 export class MediaService {
@@ -27,6 +29,7 @@ export class MediaService {
     @Inject(STORAGE_PROVIDER)
     private readonly storageProvider: StorageProvider,
     private readonly configService: ConfigService,
+    private readonly queueService: QueueService,
   ) {
     this.allowedMimeTypes = this.configService.get<string[]>(
       'upload.allowedMimeTypes',
@@ -69,7 +72,19 @@ export class MediaService {
       uploadedById: userId,
     });
 
-    return this.mediaRepository.save(media);
+    const saved = await this.mediaRepository.save(media);
+
+    // Dispatch background processing for images
+    if (file.mimetype.startsWith('image/')) {
+      await this.queueService.addJob({
+        queueName: MEDIA_QUEUE,
+        jobName: 'generate-thumbnail',
+        payload: { mediaId: saved.id },
+        initiatedBy: userId,
+      });
+    }
+
+    return saved;
   }
 
   async uploadFiles(

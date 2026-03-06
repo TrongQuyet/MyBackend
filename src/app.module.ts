@@ -7,9 +7,11 @@ import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import appConfig from './config/app.config';
 import uploadConfig from './config/upload.config';
+import queueConfig from './config/queue.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { MediaModule } from './modules/media/media.module';
+import { QueueModule } from './modules/queue/queue.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -19,7 +21,7 @@ import { AppService } from './app.service';
     // Config
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, appConfig, uploadConfig],
+      load: [databaseConfig, jwtConfig, appConfig, uploadConfig, queueConfig],
     }),
 
     // Database
@@ -42,6 +44,7 @@ import { AppService } from './app.service';
     }),
 
     // Feature modules
+    QueueModule,
     AuthModule,
     UsersModule,
     MediaModule,

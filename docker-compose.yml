@@ -1,4 +1,17 @@
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   mysql:
     image: mysql:8.0
     environment:
@@ -34,10 +47,16 @@ services:
       - THROTTLE_TTL=${THROTTLE_TTL:-60000}
       - THROTTLE_LIMIT=${THROTTLE_LIMIT:-100}
       - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
 volumes:
   mysql_data:
+  redis_data:
