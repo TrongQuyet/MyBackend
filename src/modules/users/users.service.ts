@@ -10,12 +10,14 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    private readonly cacheService: CacheService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -56,26 +58,44 @@ export class UsersService {
   }
 
   async findById(id: string): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return user;
+    return this.cacheService.wrap<User>(
+      `user:${id}`,
+      async () => {
+        const user = await this.usersRepository.findOne({ where: { id } });
+        if (!user) {
+          throw new NotFoundException('User not found');
+        }
+        return user;
+      },
+      300,
+    );
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { email } });
+    return this.cacheService.wrap<User | null>(
+      `user:email:${email}`,
+      () => this.usersRepository.findOne({ where: { email } }),
+      300,
+    );
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findById(id);
     Object.assign(user, updateUserDto);
-    return this.usersRepository.save(user);
+    const saved = await this.usersRepository.save(user);
+
+    await this.cacheService.del(`user:${id}`);
+    await this.cacheService.del(`user:email:${user.email}`);
+
+    return saved;
   }
 
   async remove(id: string): Promise<void> {
     const user = await this.findById(id);
     await this.usersRepository.remove(user);
+
+    await this.cacheService.del(`user:${id}`);
+    await this.cacheService.del(`user:email:${user.email}`);
   }
 
   async updateLastLogin(id: string): Promise<void> {
