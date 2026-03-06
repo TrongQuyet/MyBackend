@@ -14,6 +14,7 @@ import { UsersModule } from './modules/users/users.module';
 import { MediaModule } from './modules/media/media.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { AppCacheModule } from './modules/cache/cache.module';
+import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -47,6 +48,7 @@ import { AppService } from './app.service';
 
     // Feature modules
     AppCacheModule,
+    AuditLogModule,
     QueueModule,
     AuthModule,
     UsersModule,

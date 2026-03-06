@@ -19,11 +19,14 @@ import { HttpCacheInterceptor } from '../../common/interceptors/http-cache.inter
 import { CacheInvalidationInterceptor } from '../../common/interceptors/cache-invalidation.interceptor';
 import { CacheTTL } from '../../common/decorators/cache-ttl.decorator';
 import { CacheInvalidate } from '../../common/decorators/cache-invalidate.decorator';
+import { AuditInterceptor } from '../../common/interceptors/audit.interceptor';
+import { Audit } from '../../common/decorators/audit.decorator';
+import { AuditAction } from '../../modules/audit-log/constants/audit.constants';
 
 @ApiTags('Users')
 @ApiBearerAuth()
 @Controller('users')
-@UseInterceptors(HttpCacheInterceptor, CacheInvalidationInterceptor)
+@UseInterceptors(HttpCacheInterceptor, CacheInvalidationInterceptor, AuditInterceptor)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -41,6 +44,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @Audit(AuditAction.UPDATE, 'user', 'Updated user')
   @CacheInvalidate('http:*:*/users*')
   @ApiOperation({ summary: 'Update user' })
   update(
@@ -51,6 +55,7 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @Audit(AuditAction.DELETE, 'user', 'Deleted user')
   @CacheInvalidate('http:*:*/users*')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete user' })
