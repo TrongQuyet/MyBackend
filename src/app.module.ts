@@ -6,8 +6,10 @@ import { APP_GUARD } from '@nestjs/core';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import appConfig from './config/app.config';
+import uploadConfig from './config/upload.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { MediaModule } from './modules/media/media.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -17,7 +19,7 @@ import { AppService } from './app.service';
     // Config
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, appConfig],
+      load: [databaseConfig, jwtConfig, appConfig, uploadConfig],
     }),
 
     // Database
@@ -42,6 +44,7 @@ import { AppService } from './app.service';
     // Feature modules
     AuthModule,
     UsersModule,
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [
